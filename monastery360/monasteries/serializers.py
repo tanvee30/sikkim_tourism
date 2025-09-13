@@ -4,4 +4,4 @@ from .models import Monastery
 class MonasterySerializer(serializers.ModelSerializer):
     class Meta:
         model = Monastery
-        fields = '_all_'
+        fields = '__all__'
