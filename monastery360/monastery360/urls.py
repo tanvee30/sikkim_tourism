@@ -26,4 +26,6 @@ router.register(r'monasteries', MonasteryViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    path('api/monasteries/', include('monasteries.urls')),
+
 ]
