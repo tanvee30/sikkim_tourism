@@ -40,9 +40,10 @@ INSTALLED_APPS = [
     'rest_framework',
     
     'monasteries',
-    'authentication',
+    
     
 ]
+
 
 
 
@@ -135,3 +136,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 import os
 OPENWEATHER_API_KEY = "8a8189310713b5446c3dccca2b1ededf"
+
+import os
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

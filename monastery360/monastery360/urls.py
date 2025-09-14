@@ -19,9 +19,17 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 from monasteries.views import MonasteryViewSet
+from monasteries.views import ArchiveViewSet
+from django.conf import settings
+from django.conf.urls.static import static
+from rest_framework.routers import DefaultRouter
+from monasteries.views import MonkViewSet, MonkSessionViewSet, MonkSessionApplicationViewSet
 
 router = routers.DefaultRouter()
 router.register(r'monasteries', MonasteryViewSet)
+
+
+router.register(r'archives', ArchiveViewSet)  # new route
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,3 +37,24 @@ urlpatterns = [
     path('api/monasteries/', include('monasteries.urls')),
 
 ]
+
+
+
+router = DefaultRouter()
+router.register(r'monks', MonkViewSet)
+router.register(r'sessions', MonkSessionViewSet)
+router.register(r'applications', MonkSessionApplicationViewSet)
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/monasteries/", include("monasteries.urls")),  # monasteries + weather + archives
+    path("api/", include(router.urls)),                     # monks/sessions/applications here
+]
+
+
+
+
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
