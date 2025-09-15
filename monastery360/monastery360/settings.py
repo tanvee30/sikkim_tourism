@@ -136,6 +136,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 import os
 OPENWEATHER_API_KEY = "8a8189310713b5446c3dccca2b1ededf"
+import os
+
+GOOGLE_STATIC_MAPS_API_KEY = os.getenv("GOOGLE_STATIC_MAPS_API_KEY")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+# GOOGLE_DIRECTIONS_API_KEY = os.getenv("GOOGLE_DIRECTIONS_API_KEY")
+
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # loads variables from .env
+GOOGLE_DIRECTIONS_API_KEY = os.getenv("GOOGLE_DIRECTIONS_API_KEY")
+
+
+
 
 import os
 
