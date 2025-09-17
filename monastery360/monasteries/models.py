@@ -89,3 +89,8 @@ class MonkSessionApplication(models.Model):
         return f"{self.user.email} -> {self.session.title}"
 
 
+
+class MonasteryPanorama(models.Model):
+    monastery = models.ForeignKey(Monastery, related_name='panoramas', on_delete=models.CASCADE)
+    title = models.CharField(max_length=100, blank=True)
+    image = models.ImageField(upload_to='panoramas/')

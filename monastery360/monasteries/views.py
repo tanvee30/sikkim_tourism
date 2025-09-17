@@ -35,6 +35,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, render
 
 class MonasteryViewSet(viewsets.ModelViewSet):
     queryset = Monastery.objects.all()
@@ -421,4 +422,329 @@ def static_map(request):
     
     response = requests.get(base_url, params=params)
     return HttpResponse(response.content, content_type="image/png")
+
+# views.py - 360° Virtual Tour API
+
+import requests
+import json
+from django.http import JsonResponse, HttpResponse
+from django.conf import settings
+from django.shortcuts import get_object_or_404
+from .models import Monastery
+
+def monastery_360_tour(request, monastery_id):
+    """
+    API to get 360° virtual tour data for a monastery
+    Returns Street View panorama data and multiple viewing angles
+    """
+    try:
+        monastery = get_object_or_404(Monastery, pk=monastery_id)
+        
+        # Get radius parameter (default 100m)
+        radius = request.GET.get('radius', '100')
+        
+        # Street View Static API for panorama images
+        base_url = "https://maps.googleapis.com/maps/api/streetview"
+        
+        # Multiple viewing angles for 360° experience
+        viewing_angles = [0, 45, 90, 135, 180, 225, 270, 315]  # 8 directions
+        
+        tour_data = {
+            "monastery": {
+                "id": monastery.id,
+                "name": monastery.name,
+                "latitude": monastery.latitude,
+                "longitude": monastery.longitude,
+                "description": getattr(monastery, 'description', ''),
+            },
+            "panoramas": [],
+            "metadata": {
+                "total_views": len(viewing_angles),
+                "radius": radius,
+                "generated_at": "2024-01-01T00:00:00Z"
+            }
+        }
+        
+        # Generate panorama data for each angle
+        for i, angle in enumerate(viewing_angles):
+            panorama_url = (
+                f"{base_url}?"
+                f"location={monastery.latitude},{monastery.longitude}&"
+                f"size=800x600&"
+                f"heading={angle}&"
+                f"pitch=0&"
+                f"fov=90&"
+                f"radius={radius}&"
+                f"key={settings.GOOGLE_STREET_VIEW_API_KEY}"
+            )
+            
+            # Check if Street View data is available at this location
+            metadata_url = (
+                "https://maps.googleapis.com/maps/api/streetview/metadata?"
+                f"location={monastery.latitude},{monastery.longitude}&"
+                f"radius={radius}&"
+                f"key={settings.GOOGLE_STREET_VIEW_API_KEY}"
+            )
+            
+            try:
+                metadata_response = requests.get(metadata_url).json()
+                
+                if metadata_response.get('status') == 'OK':
+                    panorama_data = {
+                        "view_id": i + 1,
+                        "heading": angle,
+                        "direction": get_direction_name(angle),
+                        "image_url": panorama_url,
+                        "status": "available",
+                        "pano_id": metadata_response.get('pano_id'),
+                        "location": {
+                            "lat": metadata_response.get('location', {}).get('lat'),
+                            "lng": metadata_response.get('location', {}).get('lng')
+                        },
+                        "copyright": metadata_response.get('copyright', ''),
+                        "date": metadata_response.get('date', '')
+                    }
+                else:
+                    panorama_data = {
+                        "view_id": i + 1,
+                        "heading": angle,
+                        "direction": get_direction_name(angle),
+                        "image_url": panorama_url,
+                        "status": "not_available",
+                        "error": metadata_response.get('status')
+                    }
+                    
+                tour_data["panoramas"].append(panorama_data)
+                
+            except requests.RequestException as e:
+                return JsonResponse({
+                    "error": "Failed to fetch Street View data",
+                    "details": str(e)
+                }, status=500)
+        
+        return JsonResponse(tour_data)
+        
+    except Monastery.DoesNotExist:
+        return JsonResponse({"error": "Monastery not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+def get_direction_name(angle):
+    """Convert angle to direction name"""
+    directions = {
+        0: "North", 45: "Northeast", 90: "East", 135: "Southeast",
+        180: "South", 225: "Southwest", 270: "West", 315: "Northwest"
+    }
+    return directions.get(angle, f"{angle}°")
+
+def monastery_360_viewer(request, monastery_id):
+    """
+    Return HTML viewer for 360° tour
+    """
+    try:
+        monastery = get_object_or_404(Monastery, pk=monastery_id)
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>360° Tour - {monastery.name}</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{ 
+                    margin: 0; 
+                    font-family: Arial, sans-serif; 
+                    background: #000;
+                }}
+                .viewer-container {{
+                    width: 100vw;
+                    height: 100vh;
+                    position: relative;
+                    overflow: hidden;
+                }}
+                .panorama-image {{
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    transition: opacity 0.5s ease;
+                }}
+                .controls {{
+                    position: absolute;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    display: flex;
+                    gap: 10px;
+                    background: rgba(0,0,0,0.7);
+                    padding: 15px;
+                    border-radius: 10px;
+                }}
+                .control-btn {{
+                    background: #4285f4;
+                    color: white;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }}
+                .control-btn:hover {{
+                    background: #3367d6;
+                }}
+                .control-btn.active {{
+                    background: #0f9d58;
+                }}
+                .monastery-info {{
+                    position: absolute;
+                    top: 20px;
+                    left: 20px;
+                    background: rgba(0,0,0,0.8);
+                    color: white;
+                    padding: 15px;
+                    border-radius: 8px;
+                    max-width: 300px;
+                }}
+                .loading {{
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    color: white;
+                    font-size: 18px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="viewer-container">
+                <div class="loading" id="loading">Loading 360° Tour...</div>
+                
+                <div class="monastery-info">
+                    <h2>{monastery.name}</h2>
+                    <p>📍 Lat: {monastery.latitude}, Lng: {monastery.longitude}</p>
+                    <p>🌐 360° Virtual Tour</p>
+                </div>
+                
+                <img id="panoramaImage" class="panorama-image" style="display: none;" />
+                
+                <div class="controls" id="controls" style="display: none;">
+                    <button class="control-btn active" onclick="changeView(0)">N</button>
+                    <button class="control-btn" onclick="changeView(1)">NE</button>
+                    <button class="control-btn" onclick="changeView(2)">E</button>
+                    <button class="control-btn" onclick="changeView(3)">SE</button>
+                    <button class="control-btn" onclick="changeView(4)">S</button>
+                    <button class="control-btn" onclick="changeView(5)">SW</button>
+                    <button class="control-btn" onclick="changeView(6)">W</button>
+                    <button class="control-btn" onclick="changeView(7)">NW</button>
+                    <button class="control-btn" onclick="autoRotate()">🔄 Auto</button>
+                </div>
+            </div>
+
+            <script>
+                let tourData = null;
+                let currentView = 0;
+                let autoRotating = false;
+                let rotateInterval = null;
+
+                // Load tour data
+                async function loadTourData() {{
+                    try {{
+                        const response = await fetch('/monastery/1/360-tour/');
+
+                        tourData = await response.json();
+                        
+                        if (tourData.panoramas && tourData.panoramas.length > 0) {{
+                            document.getElementById('loading').style.display = 'none';
+                            document.getElementById('controls').style.display = 'flex';
+                            changeView(0);
+                        }} else {{
+                            document.getElementById('loading').innerHTML = 'No Street View data available for this location';
+                        }}
+                    }} catch (error) {{
+                        document.getElementById('loading').innerHTML = 'Error loading tour data';
+                        console.error('Error:', error);
+                    }}
+                }}
+
+                function changeView(viewIndex) {{
+                    if (!tourData || !tourData.panoramas[viewIndex]) return;
+                    
+                    currentView = viewIndex;
+                    const panorama = tourData.panoramas[viewIndex];
+                    const img = document.getElementById('panoramaImage');
+                    
+                    if (panorama.status === 'available') {{
+                        img.src = panorama.image_url;
+                        img.style.display = 'block';
+                    }}
+                    
+                    // Update active button
+                    document.querySelectorAll('.control-btn').forEach((btn, i) => {{
+                        if (i === viewIndex) {{
+                            btn.classList.add('active');
+                        }} else {{
+                            btn.classList.remove('active');
+                        }}
+                    }});
+                }}
+
+                function autoRotate() {{
+                    if (autoRotating) {{
+                        clearInterval(rotateInterval);
+                        autoRotating = false;
+                    }} else {{
+                        autoRotating = true;
+                        rotateInterval = setInterval(() => {{
+                            currentView = (currentView + 1) % 8;
+                            changeView(currentView);
+                        }}, 2000);
+                    }}
+                }}
+
+                // Load data on page load
+                loadTourData();
+            </script>
+        </body>
+        </html>
+        """
+        
+        return HttpResponse(html_content, content_type='text/html')
+        
+    except Monastery.DoesNotExist:
+        return HttpResponse("Monastery not found", status=404)
+
+# def monastery_streetview_embed(request, monastery_id):
+#     """
+#     Generate Google Street View embed URL for iframe integration
+#     """
+#     try:
+#         monastery = get_object_or_404(Monastery, pk=monastery_id)
+        
+#         # Parameters
+#         fov = request.GET.get('fov', '90')  # Field of view
+#         heading = request.GET.get('heading', '0')  # Direction
+#         pitch = request.GET.get('pitch', '0')  # Up/down angle
+        
+#         embed_url = (
+#             "https://www.google.com/maps/embed/v1/streetview?"
+#             f"key={settings.GOOGLE_STREET_VIEW_API_KEY}&"
+#             f"location={monastery.latitude},{monastery.longitude}&"
+#             f"heading={heading}&"
+#             f"pitch={pitch}&"
+#             f"fov={fov}"
+#         )
+        
+#         return JsonResponse({
+#             "monastery_id": monastery_id,
+#             "monastery_name": monastery.name,
+#             "embed_url": embed_url,
+#             "iframe_html": f'<iframe src="{embed_url}" width="600" height="400" frameborder="0"></iframe>'
+#         })
+        
+#     except Monastery.DoesNotExist:
+#         return JsonResponse({"error": "Monastery not found"}, status=404)
+
+
+
+
 

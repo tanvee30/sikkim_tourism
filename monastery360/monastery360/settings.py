@@ -62,7 +62,7 @@ ROOT_URLCONF = 'monastery360.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -148,6 +148,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # loads variables from .env
 GOOGLE_DIRECTIONS_API_KEY = os.getenv("GOOGLE_DIRECTIONS_API_KEY")
+GOOGLE_STREET_VIEW_API_KEY = 'AIzaSyBRQzly8LbGGEXLwaSb5bgUuvh50NOf5Sk'
 
 
 
