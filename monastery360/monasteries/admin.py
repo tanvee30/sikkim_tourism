@@ -1,19 +1,24 @@
 from django.contrib import admin
-from .models import Monastery
-from django.contrib import admin
-from .models import Archive
-admin.site.register(Monastery)
 from django.utils.html import format_html
-from django.contrib import admin
-from .models import Monk, MonkSession, MonkSessionApplication
+from .models import (
+    Monastery, Archive, Monk, MonkSession, MonkSessionApplication, MonasteryVirtualTourImage
+)
 
+class MonasteryVirtualTourImageInline(admin.TabularInline):
+    model = MonasteryVirtualTourImage
+    extra = 1
+
+@admin.register(Monastery)
+class MonasteryAdmin(admin.ModelAdmin):
+    list_display = ("name", "established_year", "location")
+    inlines = [MonasteryVirtualTourImageInline]
 
 
 @admin.register(Archive)
 class ArchiveAdmin(admin.ModelAdmin):
     list_display = ('title', 'category', 'monastery', 'created_at', 'image_tag')
-    search_fields = ('title', 'description')  # search bar
-    list_filter = ('monastery',)  # filter sidebar
+    search_fields = ('title', 'description')
+    list_filter = ('monastery',)
     readonly_fields = ('created_at', 'image_tag')
 
     def image_tag(self, obj):
@@ -21,9 +26,6 @@ class ArchiveAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" width="150" height="150" style="object-fit:contain;"/>', obj.image.url)
         return "No Image"
     image_tag.short_description = "Preview"
-
-
-
 
 
 @admin.register(Monk)
@@ -44,5 +46,3 @@ class MonkSessionApplicationAdmin(admin.ModelAdmin):
     list_display = ("user", "session", "status", "applied_at")
     list_filter = ("status", "applied_at")
     search_fields = ("user__email", "session__title")
-
-    

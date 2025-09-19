@@ -45,3 +45,18 @@ class MonkSessionApplicationSerializer(serializers.ModelSerializer):
         model = MonkSessionApplication
         fields = "__all__"
         read_only_fields = ["user", "applied_at", "status"]
+
+from rest_framework import serializers
+from .models import Monastery, MonasteryVirtualTourImage
+
+class MonasteryVirtualTourImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MonasteryVirtualTourImage
+        fields = ["image"]
+
+class MonasterySerializer(serializers.ModelSerializer):
+    virtual_tour_images = MonasteryVirtualTourImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Monastery
+        fields = ["id", "name", "description", "virtual_tour_images"]

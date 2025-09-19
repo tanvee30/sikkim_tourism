@@ -17,6 +17,13 @@ class Monastery(models.Model):
     def __str__(self):
         return self.name
     
+class MonasteryVirtualTourImage(models.Model):
+    monastery = models.ForeignKey(Monastery, related_name="virtual_tour_images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="monastery_virtual_tours/")  # Only store image
+
+    def __str__(self):
+        return f"{self.monastery.name} Image"
+    
     # monasteries/models.py
 
 
@@ -90,7 +97,4 @@ class MonkSessionApplication(models.Model):
 
 
 
-class MonasteryPanorama(models.Model):
-    monastery = models.ForeignKey(Monastery, related_name='panoramas', on_delete=models.CASCADE)
-    title = models.CharField(max_length=100, blank=True)
-    image = models.ImageField(upload_to='panoramas/')
+

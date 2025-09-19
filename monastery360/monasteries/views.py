@@ -745,6 +745,25 @@ def monastery_360_viewer(request, monastery_id):
 #         return JsonResponse({"error": "Monastery not found"}, status=404)
 
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Monastery
+from .serializers import MonasteryVirtualTourImageSerializer
+
+@api_view(["GET"])
+def monastery_inside_virtual_tour(request, monastery_id):
+    try:
+        monastery = Monastery.objects.get(pk=monastery_id)
+    except Monastery.DoesNotExist:
+        return Response({"error": "Monastery not found"}, status=404)
+
+    images = monastery.virtual_tour_images.all()
+    serializer = MonasteryVirtualTourImageSerializer(images, many=True)
+
+    return Response({
+        "monastery": monastery.name,
+        "inside_virtual_tour": serializer.data
+    })
 
 
 
