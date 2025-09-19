@@ -96,5 +96,18 @@ class MonkSessionApplication(models.Model):
         return f"{self.user.email} -> {self.session.title}"
 
 
+class Event(models.Model):
+    monastery = models.ForeignKey(Monastery, on_delete=models.CASCADE, related_name="events")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    event_date = models.DateTimeField()
+    total_seats = models.PositiveIntegerField()
+    booked_seats = models.PositiveIntegerField(default=0)
+
+    def available_seats(self):
+        return self.total_seats - self.booked_seats
+
+    def __str__(self):
+        return f"{self.title} ({self.monastery.name})"
 
 

@@ -60,3 +60,14 @@ class MonasterySerializer(serializers.ModelSerializer):
     class Meta:
         model = Monastery
         fields = ["id", "name", "description", "virtual_tour_images"]
+
+# monasteries/serializers.py
+from rest_framework import serializers
+from .models import Event
+
+class EventSerializer(serializers.ModelSerializer):
+    available_seats = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Event
+        fields = ["id", "monastery", "title", "description", "event_date", "total_seats", "booked_seats", "available_seats"]

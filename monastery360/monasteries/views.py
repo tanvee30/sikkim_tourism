@@ -765,5 +765,39 @@ def monastery_inside_virtual_tour(request, monastery_id):
         "inside_virtual_tour": serializer.data
     })
 
+# monasteries/views.py
+from rest_framework import generics, status
+from rest_framework.response import Response
+from .models import Event
+from .serializers import EventSerializer
+
+# List all upcoming events for a monastery
+class MonasteryEventsList(generics.ListAPIView):
+    serializer_class = EventSerializer
+
+    def get_queryset(self):
+        monastery_id = self.kwargs["monastery_id"]
+        return Event.objects.filter(monastery_id=monastery_id).order_by("event_date")
+
+
+# Book a seat for an event
+from rest_framework.views import APIView
+
+class BookEventSeat(APIView):
+    def post(self, request, event_id):
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if event.available_seats() <= 0:
+            return Response({"error": "No seats available"}, status=status.HTTP_400_BAD_REQUEST)
+
+        event.booked_seats += 1
+        event.save()
+        return Response({
+            "message": "Seat booked successfully",
+            "event": EventSerializer(event).data
+        }, status=status.HTTP_200_OK)
 
 

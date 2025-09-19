@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from monasteries.views import (
     MonasteryViewSet, ArchiveViewSet,
-    MonkViewSet, MonkSessionViewSet, MonkSessionApplicationViewSet,monastery_weather,monastery_360_tour
+    MonkViewSet, MonkSessionViewSet, MonkSessionApplicationViewSet,monastery_weather,monastery_360_tour,MonasteryEventsList, BookEventSeat
 )
 from monasteries import views
 from django.conf import settings
@@ -13,6 +13,8 @@ from monasteries.views import static_map
 from monasteries.views import monastery_route_pdf
 from django.urls import path
 from monasteries.views import monastery_inside_virtual_tour
+
+
 
 
 
@@ -43,7 +45,8 @@ urlpatterns = [
     path('monastery/<int:monastery_id>/360-viewer/', views.monastery_360_viewer, name='monastery_360_viewer'),
     # path('monastery/<int:monastery_id>/streetview-embed/', views.monastery_streetview_embed, name='monastery_streetview_embed'),
     path("api/monasteries/<int:monastery_id>/inside-tour/", monastery_inside_virtual_tour, name="monastery_inside_tour"),
-
+    path("api/monasteries/<int:monastery_id>/events/", MonasteryEventsList.as_view(), name="monastery-events"),
+    path("api/events/<int:event_id>/book/", BookEventSeat.as_view(), name="book-event"),
 ]
 
 if settings.DEBUG:
