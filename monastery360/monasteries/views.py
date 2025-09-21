@@ -1,41 +1,36 @@
 from rest_framework import viewsets
-from .models import Monastery
-from .serializers import MonasterySerializer
+from .models import Monastery,Monk, MonkSession, MonkSessionApplication, Archive
+
+from .serializers import (MonasterySerializer,MonkSerializer, MonkSessionSerializer, MonkSessionApplicationSerializer, 
+                          ArchiveSerializer,MonasteryVirtualTourImageSerializer)
 import requests
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
-from .models import Monastery
-
-
+from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-
 from rest_framework.permissions import IsAuthenticated
-from .models import Monk, MonkSession, MonkSessionApplication
-from .serializers import MonkSerializer, MonkSessionSerializer, MonkSessionApplicationSerializer
-
-
-import requests
-from django.http import HttpResponse
 from django.conf import settings
-
-
-
-from .models import Archive
-from .serializers import ArchiveSerializer
-
-
 import re
 from io import BytesIO
-from django.http import FileResponse, JsonResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse, HttpResponse, FileResponse
+import textwrap
+import json
+
+
+
+
+
+
+
+
+
 
 class MonasteryViewSet(viewsets.ModelViewSet):
     queryset = Monastery.objects.all()
@@ -115,12 +110,6 @@ class MonkSessionApplicationViewSet(viewsets.ModelViewSet):
         apps = MonkSessionApplication.objects.filter(user=request.user)
         serializer = self.get_serializer(apps, many=True)
         return Response(serializer.data)
-
-# monasteries/views.py
-
-# monasteries/views.py (append this at the bottom)
-
-
 
 
 # import requests
@@ -259,16 +248,6 @@ class MonkSessionApplicationViewSet(viewsets.ModelViewSet):
 #     response = requests.get(base_url, params=params)
 #     return HttpResponse(response.content, content_type="image/png")
     
-
-import requests
-from django.http import JsonResponse, HttpResponse, FileResponse
-from django.conf import settings
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-from io import BytesIO
-from .models import Monastery
-import textwrap
 
 def _strip_html(html_text):
     """Utility to strip HTML tags from Google Directions instructions."""
@@ -423,14 +402,7 @@ def static_map(request):
     response = requests.get(base_url, params=params)
     return HttpResponse(response.content, content_type="image/png")
 
-# views.py - 360° Virtual Tour API
 
-import requests
-import json
-from django.http import JsonResponse, HttpResponse
-from django.conf import settings
-from django.shortcuts import get_object_or_404
-from .models import Monastery
 
 def monastery_360_tour(request, monastery_id):
     """
@@ -745,10 +717,6 @@ def monastery_360_viewer(request, monastery_id):
 #         return JsonResponse({"error": "Monastery not found"}, status=404)
 
 
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Monastery
-from .serializers import MonasteryVirtualTourImageSerializer
 
 @api_view(["GET"])
 def monastery_inside_virtual_tour(request, monastery_id):
@@ -765,39 +733,5 @@ def monastery_inside_virtual_tour(request, monastery_id):
         "inside_virtual_tour": serializer.data
     })
 
-# monasteries/views.py
-from rest_framework import generics, status
-from rest_framework.response import Response
-from .models import Event
-from .serializers import EventSerializer
-
-# List all upcoming events for a monastery
-class MonasteryEventsList(generics.ListAPIView):
-    serializer_class = EventSerializer
-
-    def get_queryset(self):
-        monastery_id = self.kwargs["monastery_id"]
-        return Event.objects.filter(monastery_id=monastery_id).order_by("event_date")
-
-
-# Book a seat for an event
-from rest_framework.views import APIView
-
-class BookEventSeat(APIView):
-    def post(self, request, event_id):
-        try:
-            event = Event.objects.get(id=event_id)
-        except Event.DoesNotExist:
-            return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        if event.available_seats() <= 0:
-            return Response({"error": "No seats available"}, status=status.HTTP_400_BAD_REQUEST)
-
-        event.booked_seats += 1
-        event.save()
-        return Response({
-            "message": "Seat booked successfully",
-            "event": EventSerializer(event).data
-        }, status=status.HTTP_200_OK)
 
 

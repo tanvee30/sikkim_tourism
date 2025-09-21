@@ -1,5 +1,4 @@
 from django.db import models
-
 from django.conf import settings
 
 
@@ -17,6 +16,7 @@ class Monastery(models.Model):
     def __str__(self):
         return self.name
     
+    
 class MonasteryVirtualTourImage(models.Model):
     monastery = models.ForeignKey(Monastery, related_name="virtual_tour_images", on_delete=models.CASCADE)
     image = models.ImageField(upload_to="monastery_virtual_tours/")  # Only store image
@@ -24,8 +24,7 @@ class MonasteryVirtualTourImage(models.Model):
     def __str__(self):
         return f"{self.monastery.name} Image"
     
-    # monasteries/models.py
-
+    
 
 
 class Archive(models.Model):
@@ -96,18 +95,5 @@ class MonkSessionApplication(models.Model):
         return f"{self.user.email} -> {self.session.title}"
 
 
-class Event(models.Model):
-    monastery = models.ForeignKey(Monastery, on_delete=models.CASCADE, related_name="events")
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    event_date = models.DateTimeField()
-    total_seats = models.PositiveIntegerField()
-    booked_seats = models.PositiveIntegerField(default=0)
-
-    def available_seats(self):
-        return self.total_seats - self.booked_seats
-
-    def __str__(self):
-        return f"{self.title} ({self.monastery.name})"
 
 

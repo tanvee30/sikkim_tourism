@@ -3,7 +3,6 @@ from django.utils.html import format_html
 from .models import (
     Monastery, Archive, Monk, MonkSession, MonkSessionApplication, MonasteryVirtualTourImage
 )
-from .models import Monastery, Event
 
 class MonasteryVirtualTourImageInline(admin.TabularInline):
     model = MonasteryVirtualTourImage
@@ -48,11 +47,4 @@ class MonkSessionApplicationAdmin(admin.ModelAdmin):
     list_filter = ("status", "applied_at")
     search_fields = ("user__email", "session__title")
 
-@admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
-    list_display = ("title", "monastery", "event_date", "total_seats", "booked_seats", "available_seats")
-    list_filter = ("monastery", "event_date")
-    search_fields = ("title", "description", "monastery__name")
 
-    def available_seats(self, obj):
-        return obj.available_seats()

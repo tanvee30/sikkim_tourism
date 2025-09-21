@@ -1,9 +1,8 @@
 from rest_framework import serializers
 from .models import Monastery
-
 from .models import Archive
+from .models import Monk, MonkSession, MonkSessionApplication,Monastery, MonasteryVirtualTourImage
 
-from .models import Monk, MonkSession, MonkSessionApplication
 
 
 class MonasterySerializer(serializers.ModelSerializer):
@@ -11,15 +10,10 @@ class MonasterySerializer(serializers.ModelSerializer):
         model = Monastery
         fields = '__all__'
 
-# monasteries/serializers.py
-
-
-
 class ArchiveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Archive
         fields = "__all__"
-
 
 
 class MonkSerializer(serializers.ModelSerializer):
@@ -46,8 +40,6 @@ class MonkSessionApplicationSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["user", "applied_at", "status"]
 
-from rest_framework import serializers
-from .models import Monastery, MonasteryVirtualTourImage
 
 class MonasteryVirtualTourImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,13 +53,4 @@ class MonasterySerializer(serializers.ModelSerializer):
         model = Monastery
         fields = ["id", "name", "description", "virtual_tour_images"]
 
-# monasteries/serializers.py
-from rest_framework import serializers
-from .models import Event
 
-class EventSerializer(serializers.ModelSerializer):
-    available_seats = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = Event
-        fields = ["id", "monastery", "title", "description", "event_date", "total_seats", "booked_seats", "available_seats"]
