@@ -46,3 +46,11 @@ class MonkSessionApplicationAdmin(admin.ModelAdmin):
     search_fields = ("user__email", "session__title")
 
     
+from django.contrib import admin
+from .models import Market
+
+
+@admin.register(Market)
+class MarketAdmin(admin.ModelAdmin):
+    list_display = ("name", "location", "latitude", "longitude")
+    search_fields = ("name", "location")

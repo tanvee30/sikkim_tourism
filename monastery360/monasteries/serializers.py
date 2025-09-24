@@ -45,3 +45,24 @@ class MonkSessionApplicationSerializer(serializers.ModelSerializer):
         model = MonkSessionApplication
         fields = "__all__"
         read_only_fields = ["user", "applied_at", "status"]
+
+
+from rest_framework import serializers
+from .models import Market
+
+
+class MarketSerializer(serializers.ModelSerializer):
+    static_map_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Market
+        fields = ["id", "name", "description", "location", "latitude", "longitude", "image", "static_map_url"]
+
+    def get_static_map_url(self, obj):
+        from django.conf import settings
+        return (
+            f"https://maps.googleapis.com/maps/api/staticmap?"
+            f"center={obj.latitude},{obj.longitude}"
+            f"&zoom=15&size=600x300&markers=color:red%7C{obj.latitude},{obj.longitude}"
+            f"&key={settings.GOOGLE_STATIC_MAPS_API_KEY}"
+        )

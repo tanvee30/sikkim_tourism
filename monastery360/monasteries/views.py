@@ -422,3 +422,52 @@ def static_map(request):
     response = requests.get(base_url, params=params)
     return HttpResponse(response.content, content_type="image/png")
 
+
+import requests
+from django.conf import settings
+from rest_framework import generics
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Market
+from .serializers import MarketSerializer
+
+
+# List all markets
+class MarketListView(generics.ListAPIView):
+    queryset = Market.objects.all()
+    serializer_class = MarketSerializer
+
+
+# Single market detail
+class MarketDetailView(generics.RetrieveAPIView):
+    queryset = Market.objects.all()
+    serializer_class = MarketSerializer
+
+
+# Get route to market
+@api_view(["GET"])
+def get_route_to_market(request, pk):
+    try:
+        market = Market.objects.get(pk=pk)
+    except Market.DoesNotExist:
+        return Response({"error": "Market not found"}, status=404)
+
+    user_lat = request.query_params.get("latitude")
+    user_lng = request.query_params.get("longitude")
+
+    if not user_lat or not user_lng:
+        return Response({"error": "User latitude and longitude required"}, status=400)
+
+    directions_url = (
+        f"https://maps.googleapis.com/maps/api/directions/json?"
+        f"origin={user_lat},{user_lng}&destination={market.latitude},{market.longitude}"
+        f"&key={settings.GOOGLE_DIRECTIONS_API_KEY}"
+    )
+
+    response = requests.get(directions_url)
+    data = response.json()
+
+    return Response({
+        "market": MarketSerializer(market).data,
+        "route": data
+    })
