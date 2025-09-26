@@ -18,12 +18,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-from monasteries.views import MonasteryViewSet
+from monasteries.views import MonasteryViewSet,FestivalViewSet
 
 router = routers.DefaultRouter()
 router.register(r'monasteries', MonasteryViewSet)
+router.register(r'festivals', FestivalViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
 ]
+
+
